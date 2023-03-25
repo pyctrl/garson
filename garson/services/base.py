@@ -6,7 +6,6 @@ from garson.contexts import base as g_ctxs
 from garson.contexts import daemon as g_daemon
 
 
-logging.basicConfig(level=logging.DEBUG)  # TODO(d.burmistrov): dev only
 LOG = logging.getLogger(__name__)
 
 
@@ -51,21 +50,3 @@ class AbstractService(abc.ABC):
         LOG.info("Stopping...")
         if self._operate:
             self._stop()
-
-
-class S(AbstractService):
-
-    def _serve(self):
-        LOG.info("My service >> serving <<")
-        LOG.info("My service >> sleeping <<")
-        signal.pause()
-        LOG.info("My service >> finished <<")
-
-    def _stop(self):
-        LOG.info("My service >> stopping <<")
-        LOG.info("My service >> (not really) <<")
-
-
-if __name__ == "__main__":
-    s = S()
-    s.serve()
