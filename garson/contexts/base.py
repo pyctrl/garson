@@ -16,9 +16,8 @@ class Contexts:
         self._stack = contextlib.ExitStack()
         LOG.info("Entering contexts...")
         ctx_count = len(self._contexts)
-        for i, ctx in enumerate(self._contexts):
-            LOG.info("Enter context {i}/{ctx_count}...",
-                     {"i": i, "ctx_count": ctx_count})
+        for i, ctx in enumerate(self._contexts, start=1):
+            LOG.info("Enter context %s/%s...", i, ctx_count)
             self._stack.enter_context(ctx)
         LOG.debug("Entered all contexts.")
 
