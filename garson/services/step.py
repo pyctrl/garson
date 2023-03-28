@@ -13,19 +13,9 @@ logging.basicConfig(level=logging.DEBUG)  # TODO(d.burmistrov): dev only
 LOG = logging.getLogger(__name__)
 
 
-def calculate_poke_time(scheduler: Scheduler,
-                        disabled=False, minimal=0.1, delimeter=10, value=None):
-    if disabled:
-        return float("inf")
-    if value:
-        return value
-    return min(scheduler._step_interval / delimeter, minimal)
-
-
 class Scheduler:
 
-    def __init__(self, service, step_period: int | float = 1):
-        self._service = service
+    def __init__(self, step_period: int | float = 1):
         self._step_interval = step_period
         self._next_launch = -float("inf")
         self._scheduled: t.Optional[float] = None
@@ -76,13 +66,12 @@ class Scheduler:
 
 class StepService(base.AbstractService):
 
-    def __init__(self, scheduler, poke_time=None,
-                 operate=True, contexts=None, daemonize=True):
+    def __init__(self, scheduler: Scheduler,
+                 operate: bool = True, contexts=None, daemonize: bool = True):
         super().__init__(operate=operate,
                          contexts=contexts,
                          daemonize=daemonize)
-        self._sched: Scheduler = scheduler(self)
-        self._poke_time = poke_time or calculate_poke_time(self._sched)
+        self._sched = scheduler
         self._loop = False
 
     def _setup(self):
@@ -97,7 +86,7 @@ class StepService(base.AbstractService):
                 now = time.monotonic()
 
             if (delay := next_launch - now) > 0:
-                time.sleep(min(delay, self._poke_time))
+                time.sleep(delay)
 
     def _stop(self):
         self._loop = False
@@ -110,12 +99,16 @@ class StepService(base.AbstractService):
 class S(StepService):
 
     def _step(self, scheduler):
-        LOG.info("My service >> step <<")
-        delta = datetime.timedelta(seconds=3)
         dt = datetime.datetime.utcnow()
+        LOG.info("My service >> step << %s", dt)
+        delta = datetime.timedelta(seconds=3)
         scheduler.set_next_step(timestamp=(dt + delta))
-        scheduler.set_next_step(delta=0.5)
+        scheduler.set_next_step(delta=10.5)
+
+
+def main():
+    S(Scheduler(3)).serve()
 
 
 if __name__ == "__main__":
-    S(Scheduler, 1).serve()
+    main()
