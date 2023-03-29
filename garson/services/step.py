@@ -81,12 +81,10 @@ class StepService(base.AbstractService):
     def _serve(self):
         while self._loop:
             now, next_launch = self._sched.schedule()
-            if now >= next_launch:
+            if now < next_launch:
+                time.sleep(next_launch - now)
+            else:
                 self._step(scheduler=self._sched)
-                now = time.monotonic()
-
-            if (delay := next_launch - now) > 0:
-                time.sleep(delay)
 
     def _stop(self):
         self._loop = False
