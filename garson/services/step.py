@@ -13,9 +13,26 @@ logging.basicConfig(level=logging.DEBUG)  # TODO(d.burmistrov): dev only
 LOG = logging.getLogger(__name__)
 
 
-class Scheduler:
+class Scheduler(abc.ABC):
+
+    @abc.abstractmethod
+    def schedule(self) -> tuple[float, float]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def set_next_step_schedule(self, *, delta=None, timestamp=None
+                               ) -> tuple[float, float]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def unset_next_step_schedule(self) -> tuple[float, float]:
+        raise NotImplementedError
+
+
+class IntervalScheduler(Scheduler):
 
     def __init__(self, step_period: int | float = 1):
+        super().__init__()
         self._step_interval = step_period
         self._next_launch = -float("inf")
         self._scheduled: t.Optional[float] = None
@@ -37,7 +54,6 @@ class Scheduler:
         self._next_launch = now + self._step_interval
         return now, now
 
-    # TODO(d.burmistrov): reset scheduling
     def _set_next_step_delay(self,
                              delay: int | float | datetime.timedelta,
                              ) -> tuple[float, float]:
@@ -48,8 +64,8 @@ class Scheduler:
         self._scheduled = now + delay
         return now, self._scheduled
 
-    def set_next_step(self, *, delta=None, timestamp=None,
-                      ) -> tuple[float, float]:
+    def set_next_step_schedule(self, *, delta=None, timestamp=None,
+                               ) -> tuple[float, float]:
         # TODO(d.burmistrov): match-case?
         if delta is timestamp is None:
             raise TypeError("Missing argument")
@@ -63,11 +79,18 @@ class Scheduler:
         delta = timestamp - datetime.datetime.utcnow()
         return self._set_next_step_delay(delta)
 
+    def unset_next_step_schedule(self) -> tuple[float, float]:
+        self._scheduled = None
+        return time.monotonic(), self._next_launch
+
 
 class StepService(base.AbstractService):
 
-    def __init__(self, scheduler: Scheduler,
-                 operate: bool = True, contexts=None, daemonize: bool = True):
+    def __init__(self,
+                 scheduler: Scheduler,
+                 operate: bool = True,
+                 contexts=None,
+                 daemonize: bool = True):
         super().__init__(operate=operate,
                          contexts=contexts,
                          daemonize=daemonize)
@@ -100,12 +123,12 @@ class S(StepService):
         dt = datetime.datetime.utcnow()
         LOG.info("My service >> step << %s", dt)
         delta = datetime.timedelta(seconds=3)
-        scheduler.set_next_step(timestamp=(dt + delta))
-        scheduler.set_next_step(delta=10.5)
+        scheduler.set_next_step_schedule(timestamp=(dt + delta))
+        scheduler.set_next_step_schedule(delta=10.5)
 
 
 def main():
-    S(Scheduler(3)).serve()
+    S(IntervalScheduler(3)).serve()
 
 
 if __name__ == "__main__":
