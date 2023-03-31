@@ -106,8 +106,13 @@ class StepService(base.AbstractService):
             now, next_launch = self._sched.schedule()
             if now < next_launch:
                 time.sleep(next_launch - now)
-            else:
+                continue
+
+            try:
                 self._step(scheduler=self._sched)
+                LOG.debug("Step finished successfully")
+            except Exception as e:
+                LOG.exception("Step failed: %s", e)
 
     def _stop(self):
         self._loop = False
