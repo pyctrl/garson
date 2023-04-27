@@ -8,13 +8,12 @@ from garson._lib import constants as c
 from garson.schedulers import base
 
 
-# TODO(d.burmistrov): , shift: int | float = 0
 class IntervalScheduler(base.AbstractScheduler):
 
-    def __init__(self, step_period: int | float = 1):
+    def __init__(self, step_period: int | float = 1, shift: int | float = 0):
         super().__init__()
         self._step_interval = step_period
-        self._next_launch = -c.INF
+        self._next_launch = (time.monotonic() + shift) if shift else -c.INF
         self._scheduled: t.Optional[float] = None
 
     def schedule(self) -> tuple[float, float]:

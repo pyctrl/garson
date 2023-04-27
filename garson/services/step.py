@@ -8,7 +8,6 @@ from garson.schedulers import base as sched
 from garson.services import base
 
 
-logging.basicConfig(level=logging.DEBUG)  # TODO(d.burmistrov): dev only
 LOG = logging.getLogger(__name__)
 
 
