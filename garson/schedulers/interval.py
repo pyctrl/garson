@@ -8,6 +8,7 @@ from garson._lib import constants as c
 from garson.schedulers import base
 
 
+# TODO(d.burmistrov): , shift: int | float = 0
 class IntervalScheduler(base.AbstractScheduler):
 
     def __init__(self, step_period: int | float = 1):
