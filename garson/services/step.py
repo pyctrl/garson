@@ -6,6 +6,7 @@ import logging
 import time
 import typing as t
 
+from garson.schedulers import base as sched
 from garson.services import base
 
 
@@ -13,23 +14,7 @@ logging.basicConfig(level=logging.DEBUG)  # TODO(d.burmistrov): dev only
 LOG = logging.getLogger(__name__)
 
 
-class Scheduler(abc.ABC):
-
-    @abc.abstractmethod
-    def schedule(self) -> tuple[float, float]:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def set_next_step_schedule(self, *, delta=None, timestamp=None
-                               ) -> tuple[float, float]:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def unset_next_step_schedule(self) -> tuple[float, float]:
-        raise NotImplementedError
-
-
-class IntervalScheduler(Scheduler):
+class IntervalScheduler(sched.AbstractScheduler):
 
     def __init__(self, step_period: int | float = 1):
         super().__init__()
@@ -87,7 +72,7 @@ class IntervalScheduler(Scheduler):
 class StepService(base.AbstractService):
 
     def __init__(self,
-                 scheduler: Scheduler,
+                 scheduler: sched.AbstractScheduler,
                  operate: bool = True,
                  contexts=None,
                  daemonize: bool = True):
@@ -118,7 +103,7 @@ class StepService(base.AbstractService):
         self._loop = False
 
     @abc.abstractmethod
-    def _step(self, scheduler):
+    def _step(self, scheduler: sched.AbstractScheduler):
         raise NotImplementedError()
 
 
