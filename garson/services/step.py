@@ -105,21 +105,3 @@ class StepService(base.AbstractService):
     @abc.abstractmethod
     def _step(self, scheduler: sched.AbstractScheduler):
         raise NotImplementedError()
-
-
-class S(StepService):
-
-    def _step(self, scheduler):
-        dt = datetime.datetime.utcnow()
-        LOG.info("My service >> step << %s", dt)
-        delta = datetime.timedelta(seconds=3)
-        scheduler.set_next_step_schedule(timestamp=(dt + delta))
-        scheduler.set_next_step_schedule(delta=10.5)
-
-
-def main():
-    S(IntervalScheduler(3)).serve()
-
-
-if __name__ == "__main__":
-    main()
