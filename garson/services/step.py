@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import abc
 import logging
+import operator
 import time
 import typing as t
 
@@ -12,23 +12,13 @@ from garson.services import base
 LOG = logging.getLogger(__name__)
 
 
-class AbstractStep(abc.ABC):
-
-    def __init__(self, scheduler: sched.AbstractScheduler):
-        self.scheduler = scheduler
-
-    @abc.abstractmethod
-    def __call__(self):
-        raise NotImplementedError
-
-
 class StepService(base.AbstractService):
 
-    _next_step: t.Optional[AbstractStep]
+    _next_step: t.Optional[sched.AbstractScheduler]
 
     def __init__(self,
-                 step: AbstractStep,
-                 *steps: AbstractStep,
+                 scheduled_step: sched.AbstractScheduler,
+                 *scheduled_steps: sched.AbstractScheduler,
                  operate: bool = True,
                  contexts=None,
                  daemonize: bool = True):
@@ -36,8 +26,8 @@ class StepService(base.AbstractService):
                          contexts=contexts,
                          daemonize=daemonize)
         self._loop = False
-        self._steps = (step, *steps)
-        if steps:
+        self._steps = (scheduled_step, *scheduled_steps)
+        if scheduled_steps:
             self._single_step = False
             self._next_step = None
         else:
@@ -50,34 +40,34 @@ class StepService(base.AbstractService):
 
     def _schedule(self):
         if self._single_step:
-            return self._next_step.scheduler.schedule()[0], self._next_step
+            return self._next_step.schedule()
 
         if self._next_step:
-            delay = self._next_step.scheduler.schedule()[0]
-            next_step = self._next_step
+            schedule = self._next_step.schedule()
         else:
-            delay, _, _, next_step = sorted(
-                (*step.scheduler.schedule(), step) for step in self._steps
-            )[0]
+            schedule = sorted((step.schedule() for step in self._steps),
+                              key=operator.attrgetter(sched._F_DELAY))
 
-        if delay <= 0:
+        if schedule.delay <= 0:
             self._next_step = None
 
-        return delay, next_step
+        return schedule
 
     def _serve(self):
         while self._loop:
-            delay, step = self._schedule()
+            schedule = self._schedule()
 
-            if delay > 0:
-                time.sleep(delay)
+            if schedule.delay > 0:
+                LOG.debug("Sleeping: %s", schedule.delay)
+                time.sleep(schedule.delay)
                 continue
 
             try:
-                step()
-                LOG.debug("Step finished successfully")
+                LOG.debug(">> Starting step/iterations")
+                schedule.target(self, schedule)  # or scheduler?  # + step info
+                LOG.debug("<< Step finished successfully")
             except Exception as e:
-                LOG.exception("Step failed: %s", e)
+                LOG.exception("<< [!!] Step failed: %s", e)
 
     def _stop(self):
         self._loop = False

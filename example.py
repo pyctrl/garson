@@ -9,18 +9,19 @@ logging.basicConfig(level=logging.DEBUG)  # TODO(d.burmistrov): dev only
 LOG = logging.getLogger(__name__)
 
 
-class ExampleService(step.StepService):
-
-    def _step(self, scheduler):
-        dt = datetime.datetime.utcnow()
-        LOG.info("My service >> step << %s", dt)
-        delta = datetime.timedelta(seconds=3)
-        scheduler.set_next_step_schedule(timestamp=(dt + delta))
-        scheduler.set_next_step_schedule(delta=10.5)
+def my_step(svc, schedule):
+    dt = datetime.datetime.utcnow()
+    LOG.info("[%s] My service >> step << %s :: %s", svc, dt, schedule)
+    # delta = datetime.timedelta(seconds=3)
+    # schedule.scheduler.set_next_run_schedule(timestamp=(dt + delta))
+    schedule.scheduler.set_next_run_schedule(delay=0.5)
 
 
 def main():
-    ExampleService(interval.IntervalScheduler(3)).serve()
+    sch = interval.IntervalScheduler(name="single_step",
+                                     target=my_step,
+                                     interval=3)
+    step.StepService(sch).serve()
 
 
 if __name__ == "__main__":
