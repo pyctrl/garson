@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import time
-import typing as t
 
 from garson.schedulers import base as sched
 from garson.services import base
@@ -11,22 +10,35 @@ from garson.services import base
 LOG = logging.getLogger(__name__)
 
 
-def _get_next_step(steps: t.Iterable[sched.AbstractScheduler]):
-    steps = iter(steps)
-    result = next(steps).schedule()
-    if result.is_ready():
+class Steps:
+
+    _MIN_STUB = sched.FakeScheduler().schedule()
+
+    def __init__(self, *steps: sched.AbstractScheduler):
+        self._base_index = 0
+        self._steps = steps
+        self.next = self._next_single if len(steps) == 1 else self._next_multi
+
+    def _next_single(self) -> sched.Schedule:
+        return self._steps[0].schedule()
+
+    def _next_multi(self) -> sched.Schedule:
+        steps_count = len(self._steps)
+        base_index, result = self._base_index, self._MIN_STUB
+        for i in range(steps_count):
+            index = (self._base_index + i) % steps_count
+            step = self._steps[index]
+            schedule = step.schedule()
+            if schedule.is_ready():
+                self._base_index = (index + 1) % steps_count
+                return schedule
+            if schedule.delay < result.delay:
+                base_index, result = (index + 1) % steps_count, schedule
+        self._base_index = base_index
         return result
-    for step in steps:
-        schedule = step.schedule()
-        if schedule.is_ready():
-            return schedule
-        result = min(result, schedule)
-    return result
 
 
 class StepService(base.AbstractService):
-
-    _next_step: t.Optional[sched.AbstractScheduler]
 
     def __init__(self,
                  scheduled_step: sched.AbstractScheduler,
@@ -40,51 +52,33 @@ class StepService(base.AbstractService):
                          daemonize=daemonize)
         self._max_sleep = responsiveness_period
         self._loop = False
-        self._steps = [scheduled_step, *scheduled_steps]
-        if scheduled_steps:
-            self._single_step = False
-            self._next_step = None
-        else:
-            self._single_step = True
-            self._next_step = self._steps[0]
+        self._steps = Steps(scheduled_step, *scheduled_steps)
 
     def _setup(self):
         super()._setup()
         self._loop = True
 
-    def _schedule(self):
-        if self._single_step:
-            return self._next_step.schedule()
-
-        if self._next_step:
-            schedule = self._next_step.schedule()
+    def _step(self, schedule):
+        LOG.debug(">> Starting step '%s' with iteration=%d",
+                  schedule.scheduler.name, schedule.iteration)
+        try:
+            # or scheduler?  # + step info
+            schedule.scheduler.run(args=(self, schedule))
+        except Exception as e:
+            LOG.exception("<< [!!] Step '%s' with iteration=%d has failed: %s",
+                          schedule.scheduler.name, schedule.iteration, e)
         else:
-            schedule = _get_next_step(self._steps)
-
-        if schedule.delay <= 0:
-            self._next_step = None
-
-        return schedule
+            LOG.debug("<< Step '%s' with iteration=%d successfully finished",
+                      schedule.scheduler.name, schedule.iteration)
 
     def _serve(self):
         while self._loop:
-            schedule = self._schedule()
-
-            if not schedule.is_ready():
+            schedule = self._steps.next()
+            if schedule.is_ready():
+                self._step(schedule)
+            else:
                 LOG.debug("Sleeping: %s", schedule.delay)
                 time.sleep(min(schedule.delay, self._max_sleep))
-                continue
-
-            LOG.debug(">> Starting step with iteration=%d",
-                      schedule.iteration)
-            try:
-                schedule.run(self, schedule)  # or scheduler?  # + step info
-            except Exception as e:
-                LOG.exception("<< [!!] Step with iteration=%d has failed: %s",
-                              e)
-            else:
-                LOG.debug("<< Step with iteration=%d successfully finished",
-                          schedule.iteration)
 
     def _stop(self):
         self._loop = False

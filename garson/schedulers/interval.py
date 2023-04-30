@@ -15,12 +15,12 @@ class IntervalScheduler(base.AbstractScheduler):
                  target: t.Callable,
                  interval: int | float = 1,
                  shift: int | float | datetime.timedelta = 0):
-        super().__init__(name, target)
         self._interval = interval
         if isinstance(shift, datetime.timedelta):
             shift = shift.total_seconds()
         self._next_launch = (time.monotonic() + shift) if shift else -c.INF
         self._manual_scheduled: t.Optional[float] = None
+        super().__init__(name, target)
 
     def now(self):
         return time.monotonic()
@@ -33,30 +33,26 @@ class IntervalScheduler(base.AbstractScheduler):
                 return base.Schedule(timestamp=now,
                                      scheduled=self._manual_scheduled,
                                      scheduler=self,
-                                     iteration=self._next_iteration,
-                                     target=self._target)
+                                     iteration=self._next_iteration)
 
             self._manual_scheduled = None
             self._next_launch = now + self._interval
             return base.Schedule(timestamp=now,
                                  scheduled=now,
                                  scheduler=self,
-                                 iteration=self._next_iteration,
-                                 target=self._target)
+                                 iteration=self._next_iteration)
 
         if now < self._next_launch:
             return base.Schedule(timestamp=now,
                                  scheduled=self._next_launch,
                                  scheduler=self,
-                                 iteration=self._next_iteration,
-                                 target=self._target)
+                                 iteration=self._next_iteration)
 
         self._next_launch = now + self._interval
         return base.Schedule(timestamp=now,
                              scheduled=now,
                              scheduler=self,
-                             iteration=self._next_iteration,
-                             target=self._target)
+                             iteration=self._next_iteration)
 
     def _set_next_run_delay(self, delay: int | float | datetime.timedelta,
                             ) -> base.Schedule:
@@ -68,8 +64,7 @@ class IntervalScheduler(base.AbstractScheduler):
         return base.Schedule(timestamp=now,
                              scheduled=self._manual_scheduled,
                              scheduler=self,
-                             iteration=self._next_iteration,
-                             target=self._target)
+                             iteration=self._next_iteration)
 
     def _set_next_run_timestamp(self, timestamp: int | float | datetime.date,
                                 ) -> base.Schedule:
@@ -89,5 +84,4 @@ class IntervalScheduler(base.AbstractScheduler):
         return base.Schedule(timestamp=time.monotonic(),
                              scheduled=self._next_launch,
                              scheduler=self,
-                             iteration=self._iterations,
-                             target=self._target)
+                             iteration=self._iterations)
