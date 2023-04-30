@@ -8,18 +8,37 @@ import typing as t
 _F_DELAY = "delay"
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+@dataclasses.dataclass(order=True, frozen=True, kw_only=True, slots=True)
 class Schedule:
-    timestamp: float
-    scheduled: float
-    target: t.Callable
-    scheduler: AbstractScheduler
-    delay: float = dataclasses.field(init=False)
+    timestamp: float = dataclasses.field(compare=False)
+    scheduled: float = dataclasses.field(compare=False)
+    target: t.Callable = dataclasses.field(compare=False)
+    scheduler: AbstractScheduler = dataclasses.field(compare=False)
+    iteration: int = dataclasses.field(compare=False)
+    delay: float = dataclasses.field(init=False, compare=True)
 
     def __post_init__(self):
         object.__setattr__(self, _F_DELAY, self.scheduled - self.timestamp)
 
+    def is_ready(self) -> bool:
+        return self.delay <= 0
 
+    def refresh(self, now: float):
+        # return Schedule(
+        return self.__class__(
+            timestamp=now,
+            scheduled=self.scheduled,
+            target=self.target,
+            scheduler=self.scheduler,
+            iteration=self.iteration,
+        )
+
+    def run(self, *args: t.Any, **kwargs: t.Any) -> tuple[bool, t.Any]:
+        return self.scheduler.run(self, *args, **kwargs)
+
+
+# TODO(d.burmistrov): split into abstract and base classes
+# class BaseScheduler(abc.ABC):
 class AbstractScheduler(abc.ABC):
 
     def __init__(self, name: str, target: t.Callable):
@@ -27,10 +46,26 @@ class AbstractScheduler(abc.ABC):
             raise ValueError("name must be identifier")
         self._name = name
         self._target = target
+        self._iterations = 0
+        self._scheduled: t.Optional[Schedule] = None
+
+    @property
+    def _next_iteration(self) -> int:
+        return self._iterations + 1
 
     @abc.abstractmethod
-    def schedule(self) -> Schedule:
+    def now(self) -> float:
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def _schedule(self) -> Schedule:
+        raise NotImplementedError
+
+    def schedule(self) -> Schedule:
+        if self._scheduled is None:
+            self._scheduled = self._schedule()
+            return self._scheduled
+        return self._scheduled.refresh(self.now())
 
     @abc.abstractmethod
     def _set_next_run_delay(self, delay: int | float | datetime.timedelta,
@@ -61,9 +96,16 @@ class AbstractScheduler(abc.ABC):
     def unset_next_run_schedule(self) -> Schedule:
         raise NotImplementedError
 
-    def run_forced(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self._target(*args, **kwargs)
+    # TODO(d.burmistrov): schedule argument optional? and rename?
+    def run(self, schedule: Schedule, *args: t.Any, **kwargs: t.Any,
+            ) -> tuple[bool, t.Any]:
+        if (
+                (self is schedule.scheduler)
+                and (self._iterations < schedule.iteration)
+                and schedule.is_ready()
+        ):
+            self._iterations += 1
+            self._scheduled = None
+            return True, schedule.target(*args, **kwargs)
 
-    def run_if_scheduled(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        if self.schedule().delay <= 0:
-            return self._target(*args, **kwargs)
+        return False, None
