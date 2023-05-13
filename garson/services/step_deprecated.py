@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 class StepService(base.AbstractService):
 
     def __init__(self,
-                 scheduler: sched.AbstractScheduler,
+                 scheduler: sched.SchedulerInterface,
                  operate: bool = True,
                  contexts=None,
                  daemonize: bool = True):
@@ -45,5 +45,5 @@ class StepService(base.AbstractService):
         self._loop = False
 
     @abc.abstractmethod
-    def _step(self, scheduler: sched.AbstractScheduler):
+    def _step(self, scheduler: sched.SchedulerInterface):
         raise NotImplementedError()

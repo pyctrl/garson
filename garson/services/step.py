@@ -12,9 +12,7 @@ LOG = logging.getLogger(__name__)
 
 class Steps:
 
-    _MIN_STUB = sched.FakeScheduler().schedule()
-
-    def __init__(self, *steps: sched.AbstractScheduler):
+    def __init__(self, *steps: sched.SchedulerInterface):
         self._base_index = 0
         self._steps = steps
         self.next = self._next_single if len(steps) == 1 else self._next_multi
@@ -24,15 +22,17 @@ class Steps:
 
     def _next_multi(self) -> sched.Schedule:
         steps_count = len(self._steps)
-        base_index, result = self._base_index, self._MIN_STUB
-        for i in range(steps_count):
+        base_index = self._base_index
+        result = self._steps[base_index].schedule()
+        for i in range(1, steps_count):
             index = (self._base_index + i) % steps_count
             step = self._steps[index]
             schedule = step.schedule()
-            if schedule.is_ready():
+            delay = schedule.delay
+            if delay <= 0:
                 self._base_index = (index + 1) % steps_count
                 return schedule
-            if schedule.delay < result.delay:
+            if delay < result.delay:
                 base_index, result = (index + 1) % steps_count, schedule
         self._base_index = base_index
         return result
@@ -41,8 +41,8 @@ class Steps:
 class StepService(base.AbstractService):
 
     def __init__(self,
-                 scheduled_step: sched.AbstractScheduler,
-                 *scheduled_steps: sched.AbstractScheduler,
+                 scheduled_step: sched.SchedulerInterface,
+                 *scheduled_steps: sched.SchedulerInterface,
                  responsiveness_period: int | float = 1,
                  operate: bool = True,
                  contexts=None,

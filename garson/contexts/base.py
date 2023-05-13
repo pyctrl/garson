@@ -17,7 +17,7 @@ class Contexts:
         LOG.info("Entering contexts...")
         ctx_count = len(self._contexts)
         for i, ctx in enumerate(self._contexts, start=1):
-            LOG.info("Enter context %s/%s...", i, ctx_count)
+            LOG.info("Entering context %s/%s...", i, ctx_count)
             self._stack.enter_context(ctx)
         LOG.debug("Entered all contexts.")
 

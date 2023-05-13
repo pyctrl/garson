@@ -1,6 +1,5 @@
 import datetime
 import logging
-import time
 
 from garson.schedulers import interval
 from garson.services import step
@@ -31,7 +30,7 @@ def my_step_2(svc, schedule):
 
 
 def main():
-    sch_1 = interval.IntervalScheduler(name="single_step",
+    sch_1 = interval.IntervalScheduler(name="first_step",
                                        target=my_step_1,
                                        interval=3)
     sch_2 = interval.IntervalScheduler(name="second_step",
@@ -41,5 +40,4 @@ def main():
 
 
 if __name__ == "__main__":
-    LOG.info("blah", a="A", b="B", c=42)
     main()
