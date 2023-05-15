@@ -17,10 +17,10 @@ class Steps:
         self._steps = steps
         self.next = self._next_single if len(steps) == 1 else self._next_multi
 
-    def _next_single(self) -> sched.Schedule:
+    def _next_single(self) -> sched.Appointment:
         return self._steps[0].schedule()
 
-    def _next_multi(self) -> sched.Schedule:
+    def _next_multi(self) -> sched.Appointment:
         steps_count = len(self._steps)
         base_index = self._base_index
         result = self._steps[base_index].schedule()

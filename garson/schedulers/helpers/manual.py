@@ -10,14 +10,14 @@ class manual(base.SchedulerInterface):
 
     def __init__(self, scheduler: base.SchedulerInterface):
         self._scheduler = scheduler
-        self._manual_scheduled: t.Optional[base.Schedule] = None
+        self._manual_scheduled: t.Optional[base.Appointment] = None
 
     # iface
 
     def now(self) -> float:
         return self._scheduler.now()
 
-    def schedule(self) -> base.Schedule:
+    def schedule(self) -> base.Appointment:
         if self._manual_scheduled is None:
             return self._scheduler.schedule()
         self._manual_scheduled.refresh()
@@ -28,7 +28,7 @@ class manual(base.SchedulerInterface):
             kwargs: t.Optional[dict[str, t.Any]] = None,
             force: bool = False,
             ) -> t.Union[tuple[t.Literal[True], t.Any],
-                         tuple[t.Literal[False], base.Schedule]]:
+                         tuple[t.Literal[False], base.Appointment]]:
         if force:
             self._manual_scheduled = None
 
@@ -43,19 +43,19 @@ class manual(base.SchedulerInterface):
     # manual scheduled
 
     def _set_next_run_delay(self, delay: int | float | datetime.timedelta,
-                            ) -> base.Schedule:
+                            ) -> base.Appointment:
         if isinstance(delay, datetime.timedelta):
             delay = delay.total_seconds()
 
         s = self._scheduler.schedule()
-        self._manual_scheduled = base.Schedule(timestamp=s.timestamp,
-                                               appointed=s.timestamp + delay,
-                                               scheduler=self,
-                                               iteration=s.iteration)
+        self._manual_scheduled = base.Appointment(timestamp=s.timestamp,
+                                                  planned=s.timestamp + delay,
+                                                  scheduler=self,
+                                                  iteration=s.iteration)
         return self._manual_scheduled
 
     def _set_next_run_timestamp(self, timestamp: int | float | datetime.date,
-                                ) -> base.Schedule:
+                                ) -> base.Appointment:
         if isinstance(timestamp, (int, float)):
             return self._set_next_run_delay(timestamp - self._scheduler.now())
 
@@ -72,7 +72,7 @@ class manual(base.SchedulerInterface):
             *,
             delay: t.Optional[int | float | datetime.timedelta] = None,
             timestamp: t.Optional[int | float | datetime.date] = None,
-    ) -> base.Schedule:
+    ) -> base.Appointment:
         if delay is timestamp is None:
             raise TypeError("Missing argument")
         elif (delay is not None) and (timestamp is not None):
@@ -82,7 +82,7 @@ class manual(base.SchedulerInterface):
         else:
             return self._set_next_run_timestamp(timestamp)  # type: ignore[arg-type] # noqa: E501
 
-    def unset_next_run_schedule(self) -> base.Schedule:
+    def unset_next_run_schedule(self) -> base.Appointment:
         # TODO(d.burmistrov): check if no manual schedule? raise if not?
         self._manual_scheduled = None
         return self._scheduler.schedule()

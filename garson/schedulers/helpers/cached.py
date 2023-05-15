@@ -9,14 +9,14 @@ class cached(base.SchedulerInterface):
 
     def __init__(self, scheduler: base.SchedulerInterface):
         self._scheduler = scheduler
-        self._cache: t.Optional[base.Schedule] = None
+        self._cache: t.Optional[base.Appointment] = None
 
     # iface
 
     def now(self) -> float:
         return self._scheduler.now()
 
-    def schedule(self) -> base.Schedule:
+    def schedule(self) -> base.Appointment:
         if self._cache is None or self._cache.is_ready():
             self._cache = self._scheduler.schedule()
             return self._cache
@@ -28,7 +28,7 @@ class cached(base.SchedulerInterface):
             kwargs: t.Optional[dict[str, t.Any]] = None,
             force: bool = False,
             ) -> t.Union[tuple[t.Literal[True], t.Any],
-                         tuple[t.Literal[False], base.Schedule]]:
+                         tuple[t.Literal[False], base.Appointment]]:
         if force:
             self._cache = None
 

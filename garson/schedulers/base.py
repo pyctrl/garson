@@ -10,15 +10,15 @@ _F_TIMESTAMP = "timestamp"
 
 # @dataclasses.dataclass(order=True)
 @dataclasses.dataclass(order=True, frozen=True, kw_only=True, slots=True)
-class Schedule:
+class Appointment:
     timestamp: float
-    appointed: float
+    planned: float
     scheduler: SchedulerInterface
     iteration: int
 
     @property
     def delay(self) -> float:
-        return self.appointed - self.timestamp
+        return self.planned - self.timestamp
 
     # # TODO(d.burmistrov): think...
     # def __bool__(self):
@@ -26,7 +26,7 @@ class Schedule:
 
     def is_ready(self) -> bool:
         self.refresh()
-        return self.timestamp >= self.appointed
+        return self.timestamp >= self.planned
 
     def refresh(self) -> None:
         object.__setattr__(self, _F_TIMESTAMP, self.scheduler.now())
@@ -43,7 +43,7 @@ class SchedulerInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def schedule(self) -> Schedule:
+    def schedule(self) -> Appointment:
         raise NotImplementedError
 
     # TODO(d.burmistrov): schedule argument optional? and rename?
@@ -52,7 +52,7 @@ class SchedulerInterface(abc.ABC):
             kwargs: t.Optional[dict[str, t.Any]] = None,
             force: bool = False,
             ) -> t.Union[tuple[t.Literal[True], t.Any],
-                         tuple[t.Literal[False], Schedule]]:
+                         tuple[t.Literal[False], Appointment]]:
         raise NotImplementedError
 
 
@@ -73,19 +73,19 @@ class BaseScheduler(SchedulerInterface):
     def _schedule(self, now: float) -> float:
         raise NotImplementedError
 
-    def schedule(self) -> Schedule:
+    def schedule(self) -> Appointment:
         now = self.now()
-        return Schedule(timestamp=now,
-                        appointed=self._schedule(now=now),
-                        scheduler=self,
-                        iteration=self._next_iteration)
+        return Appointment(timestamp=now,
+                           planned=self._schedule(now=now),
+                           scheduler=self,
+                           iteration=self._next_iteration)
 
     def run(self,
             args: t.Optional[list[t.Any] | tuple[t.Any]] = None,
             kwargs: t.Optional[dict[str, t.Any]] = None,
             force: bool = False,
             ) -> t.Union[tuple[t.Literal[True], t.Any],
-                         tuple[t.Literal[False], Schedule]]:
+                         tuple[t.Literal[False], Appointment]]:
         self._iterations = self._next_iteration
         self._running = True
         try:
