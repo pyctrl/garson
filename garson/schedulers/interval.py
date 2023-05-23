@@ -11,15 +11,14 @@ from garson.schedulers import base
 class IntervalScheduler(base.BaseScheduler):
 
     def __init__(self,
-                 name: str,
-                 target: t.Callable,
+                 name: t.Optional[str] = None,
                  interval: int | float = 1,
                  shift: int | float | datetime.timedelta = 0):
         self._interval = interval
         if isinstance(shift, datetime.timedelta):
             shift = shift.total_seconds()
         self._next_launch = (time.monotonic() + shift) if shift else -c.INF
-        super().__init__(name, target)
+        super().__init__(name=name)
 
     def now(self):
         return time.monotonic()

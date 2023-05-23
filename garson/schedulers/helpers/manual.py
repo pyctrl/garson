@@ -23,23 +23,6 @@ class manual(base.SchedulerInterface):
         self._manual_scheduled.refresh()
         return self._manual_scheduled
 
-    def run(self,
-            args: t.Optional[list[t.Any] | tuple[t.Any]] = None,
-            kwargs: t.Optional[dict[str, t.Any]] = None,
-            force: bool = False,
-            ) -> t.Union[tuple[t.Literal[True], t.Any],
-                         tuple[t.Literal[False], base.Appointment]]:
-        if force:
-            self._manual_scheduled = None
-
-        if self._manual_scheduled is None:
-            return self._scheduler.run(args=args, kwargs=kwargs, force=force)
-        elif self._manual_scheduled.is_ready():
-            self._manual_scheduled = None
-            return self._scheduler.run(args=args, kwargs=kwargs, force=True)
-        else:
-            return False, self._manual_scheduled
-
     # manual scheduled
 
     def _set_next_run_delay(self, delay: int | float | datetime.timedelta,
@@ -50,8 +33,7 @@ class manual(base.SchedulerInterface):
         s = self._scheduler.schedule()
         self._manual_scheduled = base.Appointment(timestamp=s.timestamp,
                                                   planned=s.timestamp + delay,
-                                                  scheduler=self,
-                                                  iteration=s.iteration)
+                                                  scheduler=self)
         return self._manual_scheduled
 
     def _set_next_run_timestamp(self, timestamp: int | float | datetime.date,

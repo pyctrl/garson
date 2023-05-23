@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import abc
 import contextlib
 import functools
 import logging
 import signal
+import uuid
 
+from garson._lib import constants as c
+from garson._lib import info as i
+from garson._lib import utils
 from garson.contexts import base as g_ctxs
 from garson.contexts import daemon as g_daemon
 
@@ -28,6 +34,8 @@ def _mark_failed(method):
 
 class AbstractService(abc.ABC):
 
+    SERVICE_TYPE = "untyped"
+
     def __init__(self, operate=True, contexts=None, daemonize=True):
         self._operate = operate
         contexts = contexts or []
@@ -36,6 +44,15 @@ class AbstractService(abc.ABC):
         self._ctxs = g_ctxs.Contexts(contexts)
         self._failed = False
         self._serving = False
+        self.info = i.Info()
+        self._reset_info()
+
+    def _reset_info(self):
+        self.info.do_clear()
+        self.info.do_touch(c.INFO_SERVICE,
+                           name=type(self).__name__,
+                           qual_name=utils.make_qualname(self),
+                           type=self.SERVICE_TYPE)
 
     def _setup(self):
         self._ctxs.open()
@@ -44,12 +61,16 @@ class AbstractService(abc.ABC):
         self._ctxs.close()
 
     def serve(self):
+        self._reset_info()
+        serve_info = self.info.do_touch(c.INFO_SERVE,
+                                        launch_id=uuid.uuid4().hex)
         try:
             LOG.info("Preparing to serve...")
             self._setup()
             LOG.info(("Fakely serving...", "Serving...")[self._operate])
             self._serving = True
-            (signal.pause, self._serve)[self._operate]()
+            with utils.measure(serve_info):
+                (signal.pause, self._serve)[self._operate]()
             LOG.info("Finished serving normally.")
         except Exception as e:
             LOG.info("Serving has failed: %s", e)

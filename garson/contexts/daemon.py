@@ -1,7 +1,10 @@
+import os
 import signal
 import sys
 
 import daemon  # type: ignore
+
+from garson._lib import constants as c
 
 
 class DaemonContext:
@@ -20,6 +23,7 @@ class DaemonContext:
 
     def __enter__(self):
         self._dtx.open()
+        self._svc.info.do_touch(c.INFO_PROCESS, pid=os.getpid())
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
