@@ -39,11 +39,9 @@ class AbstractService(abc.ABC):
     SERVICE_TYPE = "untyped"
 
     def __init__(self,
-                 operate=True,
                  contexts=None,
                  daemonize=True,
                  log_adapter=log.LogAdapter):
-        self._operate = operate
         contexts = contexts or []
         if daemonize:
             contexts.append(g_daemon.DaemonContext(self))
@@ -66,7 +64,8 @@ class AbstractService(abc.ABC):
         self.info.do_touch(c.INFO_SERVICE,
                            name=type(self).__name__,
                            qual_name=utils.make_qualname(self),
-                           type=self.SERVICE_TYPE)
+                           type=self.SERVICE_TYPE,
+                           instance_id=uuid.uuid4().hex)
 
     def _setup(self):
         self._ctxs.open()
@@ -74,25 +73,32 @@ class AbstractService(abc.ABC):
     def _teardown(self):
         self._ctxs.close()
 
-    def serve(self):
+    def __enter__(self):
+        self._l(LOG).info("Preparing to serve...")
+
         self._reset_info()
         serve_info = self.info.do_touch(c.INFO_SERVE,
                                         launch_id=uuid.uuid4().hex)
-        try:
-            self._l(LOG).info("Preparing to serve...")
-            self._setup()
-            msg = ("Fakely serving...", "Serving...")[self._operate]
-            self._l(LOG).info(msg)
+
+        self._setup()
+        return self
+
+    def __exit__(self, t, v, tb):
+        self._l(LOG).info("Tearing down...")
+        self._teardown()
+
+    def serve(self):
+        with self:
+            self._l(LOG).info("Serving...")
             self._serving = True
-            with utils.measure(serve_info):
-                (signal.pause, self._serve)[self._operate]()
-            self._l(LOG).info("Finished serving normally.")
-        except Exception as e:
-            self._l(LOG).info("Serving has failed: %s", e)
-            raise
-        finally:
-            self._l(LOG).info("Tearing down...")
-            self._teardown()
+            try:
+                with utils.measure(serve_info):
+                    self._serve()
+            except Exception as e:
+                self._l(LOG).info("Serving has failed: %s", e)
+                raise
+            else:
+                self._l(LOG).info("Finished serving normally.")
 
     @abc.abstractmethod
     def _serve(self):
