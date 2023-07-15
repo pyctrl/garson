@@ -4,14 +4,12 @@ import abc
 import contextlib
 import functools
 import logging
-import signal
 import uuid
 import weakref
 
 from garson._lib import constants as c
 from garson._lib import info as i
 from garson._lib import log
-from garson._lib import utils
 from garson.contexts import base as g_ctxs
 from garson.contexts import daemon as g_daemon
 
