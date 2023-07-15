@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
+import datetime
 import functools
 import logging
 import uuid
@@ -101,8 +102,7 @@ class AbstractService(abc.ABC):
             self._l(LOG).info("Serving...")
             self._serving = True
             try:
-                with utils.measure(self.info.serve):
-                    self._serve()
+                self._serve()
             except Exception as e:
                 self._l(LOG).info("Serving has failed: %s", e)
                 raise
