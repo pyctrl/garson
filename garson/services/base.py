@@ -75,15 +75,26 @@ class AbstractService(abc.ABC):
 
     def __enter__(self):
         self._l(LOG).info("Preparing to serve...")
-
         self._reset_info()
-        serve_info = self.info.do_touch(c.INFO_SERVE,
-                                        launch_id=uuid.uuid4().hex)
-
+        info = self.info.do_touch(c.INFO_SERVE,
+                                  launch_id=uuid.uuid4().hex)
         self._setup()
+        info.start = datetime.datetime.utcnow()
         return self
 
     def __exit__(self, t, v, tb):
+        info = self.info.serve
+        info.end = datetime.datetime.utcnow()
+        info.duration = info.end - info.start
+        if t is None:
+            info.do_update(tb=False,
+                           exc_type=None,
+                           exc_value=None)
+        else:
+            info.do_update(tb=True,
+                           exc_type=t,
+                           exc_value=v)
+
         self._l(LOG).info("Tearing down...")
         self._teardown()
 
@@ -92,7 +103,7 @@ class AbstractService(abc.ABC):
             self._l(LOG).info("Serving...")
             self._serving = True
             try:
-                with utils.measure(serve_info):
+                with utils.measure(self.info.serve):
                     self._serve()
             except Exception as e:
                 self._l(LOG).info("Serving has failed: %s", e)
