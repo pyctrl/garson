@@ -59,16 +59,22 @@ class AbstractStep(abc.ABC):
 
     def __call__(self):
         self._reset_info()
-        LOG.debug(">> Starting step '%s' with iteration=%d",
-                  self.name, self._iteration)
+        self._l(LOG).debug(
+            ">> Starting step '%s' with iteration=%d",
+            self.name, self._iteration,
+        )
         try:
             with utils.measure(self.info):
                 self._step()
-            LOG.debug("<< Step '%s' with iteration=%d successfully finished",
-                      self.name, self._iteration)
+            self._l(LOG).debug(
+                "<< Step '%s' with iteration=%d successfully finished",
+                self.name, self._iteration,
+            )
         except Exception as e:
-            LOG.exception("<< [!!] Step '%s' with iteration=%d has failed: %s",
-                          self.name, self._iteration, e)
+            self._l(LOG).exception(
+                "<< [!!] Step '%s' with iteration=%d has failed: %s",
+                self.name, self._iteration, e,
+            )
         finally:
             self._iteration += 1
 
@@ -117,9 +123,9 @@ class StepService(base.AbstractService):
             if appt.is_ready():
                 step()  # step(appt)
             else:
-                LOG.debug("Next run delay: %s", appt.delay)
+                self._l(LOG).debug("Next run delay: %s", appt.delay)
                 tick = min(appt.delay, self._max_sleep)
-                LOG.debug("Sleeping tick: %s", tick)
+                self._l(LOG).debug("Sleeping tick: %s", tick)
                 time.sleep(tick)
 
     def _stop(self):

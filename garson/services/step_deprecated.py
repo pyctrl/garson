@@ -37,9 +37,9 @@ class StepService(base.AbstractService):
 
             try:
                 self._step(scheduler=self._sched)
-                LOG.debug("Step finished successfully")
+                self._l(LOG).debug("Step finished successfully")
             except Exception as e:
-                LOG.exception("Step failed: %s", e)
+                self._l(LOG).exception("Step failed: %s", e)
 
     def _stop(self):
         self._loop = False

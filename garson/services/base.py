@@ -6,9 +6,11 @@ import functools
 import logging
 import signal
 import uuid
+import weakref
 
 from garson._lib import constants as c
 from garson._lib import info as i
+from garson._lib import log
 from garson._lib import utils
 from garson.contexts import base as g_ctxs
 from garson.contexts import daemon as g_daemon
@@ -36,7 +38,11 @@ class AbstractService(abc.ABC):
 
     SERVICE_TYPE = "untyped"
 
-    def __init__(self, operate=True, contexts=None, daemonize=True):
+    def __init__(self,
+                 operate=True,
+                 contexts=None,
+                 daemonize=True,
+                 log_adapter=log.LogAdapter):
         self._operate = operate
         contexts = contexts or []
         if daemonize:
@@ -46,6 +52,14 @@ class AbstractService(abc.ABC):
         self._serving = False
         self.info = i.Info()
         self._reset_info()
+        self._log_adapter = log_adapter
+        self._loggers = weakref.WeakKeyDictionary()
+
+    def _l(self, logger):
+        if logger not in self._loggers:
+            wrapped = self._log_adapter(logger=logger, info=self.info)
+            self._loggers[logger] = wrapped
+        return self._loggers[logger]
 
     def _reset_info(self):
         self.info.do_clear()
@@ -65,18 +79,19 @@ class AbstractService(abc.ABC):
         serve_info = self.info.do_touch(c.INFO_SERVE,
                                         launch_id=uuid.uuid4().hex)
         try:
-            LOG.info("Preparing to serve...")
+            self._l(LOG).info("Preparing to serve...")
             self._setup()
-            LOG.info(("Fakely serving...", "Serving...")[self._operate])
+            msg = ("Fakely serving...", "Serving...")[self._operate]
+            self._l(LOG).info(msg)
             self._serving = True
             with utils.measure(serve_info):
                 (signal.pause, self._serve)[self._operate]()
-            LOG.info("Finished serving normally.")
+            self._l(LOG).info("Finished serving normally.")
         except Exception as e:
-            LOG.info("Serving has failed: %s", e)
+            self._l(LOG).info("Serving has failed: %s", e)
             raise
         finally:
-            LOG.info("Tearing down...")
+            self._l(LOG).info("Tearing down...")
             self._teardown()
 
     @abc.abstractmethod
@@ -88,7 +103,7 @@ class AbstractService(abc.ABC):
         raise NotImplementedError()
 
     def stop(self):
-        LOG.info("Stopping...")
+        self._l(LOG).info("Stopping...")
         if self._operate:
             self._stop()
 
