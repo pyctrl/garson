@@ -120,8 +120,7 @@ class AbstractService(abc.ABC):
 
     def stop(self):
         self._l(LOG).info("Stopping...")
-        if self._operate:
-            self._stop()
+        self._stop()
 
     # new - thinking
     def mark_failed(self) -> None:
