@@ -33,6 +33,13 @@ class SecondStep(step.AbstractStep):
 
 
 def main():
+    # # global service.state state
+    # # svc.ctx.config.GROUP.OPTION - state
+    # with service.contexts:    # svc.ctx.env    - state 
+    #     with service.guards:  # svc.ctx.guards - state
+    #         # controller/orchestrator logic (scheduling/queueing/etc...)
+    #         service.target()  # svc.ctx.target - state
+
     step_1 = FirstStep(interval.IntervalScheduler(interval=3))
     step_2 = SecondStep(interval.IntervalScheduler(interval=1.2))
     step.StepService(step_1, step_2).serve()
