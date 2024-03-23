@@ -55,7 +55,8 @@ class AbstractService(abc.ABC):
 
     def _l(self, logger):
         if logger not in self._loggers:
-            wrapped = self._log_adapter(logger=logger, info=self.info)
+            wrapped = self._log_adapter(logger=logger,
+                                        extra=dict(info=self.info))
             self._loggers[logger] = wrapped
         return self._loggers[logger]
 
