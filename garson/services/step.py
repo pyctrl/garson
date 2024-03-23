@@ -53,6 +53,9 @@ class AbstractStep(abc.ABC):
         self.info = i.Info()
         self._reset_info()
 
+    def _l(self, logger):
+        return logger
+
     def _reset_info(self):
         self.info.do_clear()
         self.info.do_update(name=self.name, iteration=self._iteration)
