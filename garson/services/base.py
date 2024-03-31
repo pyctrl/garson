@@ -87,15 +87,7 @@ class AbstractService(abc.ABC):
         info = self.info.serve
         info.end = datetime.datetime.utcnow()
         info.duration = info.end - info.start
-        if t is None:
-            info.do_update(tb=False,
-                           exc_type=None,
-                           exc_value=None)
-        else:
-            info.do_update(tb=True,
-                           exc_type=t,
-                           exc_value=v)
-
+        info.do_update(tb=bool(t), exc_type=t, exc_value=v)
         self._l(LOG).info("Tearing down...")
         self._teardown()
 

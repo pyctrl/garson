@@ -1,4 +1,5 @@
 import logging
+import random
 
 from garson.schedulers import interval
 from garson.services import step
@@ -27,6 +28,8 @@ class SecondStep(step.AbstractStep):
     def _step(self):
         # dt = datetime.datetime.utcnow()
         LOG.info("my_step_2 >> step II. << %s", self._iteration)
+        if random.randint(0, 10) % 2:
+            raise ZeroDivisionError()
         # delta = datetime.timedelta(seconds=3)
         # schedule.scheduler.set_next_run_schedule(timestamp=(dt + delta))
         # schedule.scheduler.set_next_run_schedule(delay=0.5)
