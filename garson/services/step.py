@@ -102,11 +102,9 @@ class StepService(base.AbstractService):
                  step: AbstractStep,
                  *steps: AbstractStep,
                  responsiveness_period: int | float = 1,
-                 contexts=None,
-                 daemonize: bool = True):
+                 contexts=None):
         # TODO(d.burmistrov): allow strategy as parameter
-        super().__init__(contexts=contexts,
-                         daemonize=daemonize)
+        super().__init__(contexts=contexts)
         self._max_sleep = responsiveness_period
         self._loop = False
         step.attach_service(self)

@@ -15,10 +15,8 @@ class StepService(base.AbstractService):
 
     def __init__(self,
                  scheduler: sched.SchedulerInterface,
-                 contexts=None,
-                 daemonize: bool = True):
-        super().__init__(contexts=contexts,
-                         daemonize=daemonize)
+                 contexts=None):
+        super().__init__(contexts=contexts)
         self._sched = scheduler
         self._loop = False
 

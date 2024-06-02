@@ -13,7 +13,6 @@ from garson._lib import info as i
 from garson._lib import log
 from garson._lib import utils
 from garson.contexts import base as g_ctxs
-from garson.contexts import daemon as g_daemon
 
 
 LOG = logging.getLogger(__name__)
@@ -40,11 +39,8 @@ class AbstractService(abc.ABC):
 
     def __init__(self,
                  contexts=None,
-                 daemonize=True,
                  log_adapter=log.LogAdapter):
         contexts = contexts or []
-        if daemonize:
-            contexts.append(g_daemon.DaemonContext(self))
         self._ctxs = g_ctxs.Contexts(contexts)
         self._failed = False
         self._serving = False
