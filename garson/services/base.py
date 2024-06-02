@@ -5,6 +5,7 @@ import contextlib
 import datetime
 import functools
 import logging
+import sys
 import uuid
 import weakref
 
@@ -106,6 +107,10 @@ class AbstractService(abc.ABC):
     @abc.abstractmethod
     def _stop(self):
         raise NotImplementedError()
+
+    def die(self, code: int, msg: str):
+        self._l(LOG).error(msg)
+        return sys.exit(code)
 
     def stop(self):
         self._l(LOG).info("Stopping...")
