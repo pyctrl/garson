@@ -5,16 +5,22 @@ import sys
 import daemon  # type: ignore
 
 from garson._lib import constants as c
+from garson.middlewares.daemon import sig_hooks
 
 
-class DaemonContext:
+# TODO: debug messages about signal hook invocations
+class DaemonizeMiddleware:
 
-    def __init__(self, svc):
+    def __init__(self, svc, hooks=None):
         self._svc = svc
-        signal_map = daemon.daemon.make_default_signal_map()
-        # TODO(d.burmistrov): pass signal/frame to `stop()`?
-        signal_map[signal.SIGTERM] = lambda sig, frame: self._svc.stop()
-        signal_map[signal.SIGINT] = signal_map[signal.SIGTERM]
+        self._hooks = {sig: hook
+                       for hook in hooks or {}
+                       for sig in hook.signals}
+        stop = sig_hooks.StopSignalHook(self._svc)
+        self._hooks.setdefault(signal.SIGTERM, stop)
+        self._hooks.setdefault(signal.SIGINT, stop)
+
+        signal_map = daemon.daemon.make_default_signal_map() | self._hooks
         self._dtx = daemon.DaemonContext(stdin=sys.stdin,
                                          stdout=sys.stdout,
                                          stderr=sys.stderr,

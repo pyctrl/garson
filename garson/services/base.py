@@ -5,6 +5,7 @@ import contextlib
 import datetime
 import functools
 import logging
+import pathlib
 import sys
 import uuid
 import weakref
@@ -13,7 +14,7 @@ from garson._lib import constants as c
 from garson._lib import info as i
 from garson._lib import log
 from garson._lib import utils
-from garson.contexts import base as g_ctxs
+from garson.middlewares import base as g_ctxs
 
 
 LOG = logging.getLogger(__name__)
