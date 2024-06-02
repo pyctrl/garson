@@ -108,13 +108,16 @@ class AbstractService(abc.ABC):
     def _stop(self):
         raise NotImplementedError()
 
-    def die(self, code: int, msg: str):
-        self._l(LOG).error(msg)
-        return sys.exit(code)
-
-    def stop(self):
+    def stop(self) -> None:
         self._l(LOG).info("Stopping...")
         self._stop()
+
+    def die(self, code: int = 1, msg: str | None = None) -> None:
+        reason = "Emergency exit!"
+        if msg:
+            reason = f"{reason} Message: {msg}"
+        self._l(LOG).warning(reason)
+        sys.exit(code)
 
     # new - thinking
     def mark_failed(self) -> None:
