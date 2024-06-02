@@ -25,3 +25,9 @@ keywords = ["garson", "service"]
 [project.urls]
 "Homepage" = "https://gitlab.com/pyctrl/garson"
 "Bug Tracker" = "https://gitlab.com/pyctrl/garson/-/issues"
+
+
+[project.optional-dependencies]
+svc-bjoern = ["bjoern"]
+grd-daemon = ["python-daemon"]
+all = ["garson[svc-bjoern,grd-daemon]"]
