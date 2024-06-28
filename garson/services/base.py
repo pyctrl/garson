@@ -5,7 +5,6 @@ import contextlib
 import datetime
 import functools
 import logging
-import pathlib
 import sys
 import uuid
 import weakref

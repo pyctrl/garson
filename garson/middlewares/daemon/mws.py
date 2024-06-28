@@ -8,7 +8,7 @@ from garson._lib import constants as c
 from garson.middlewares.daemon import sig_hooks
 
 
-# TODO: debug messages about signal hook invocations
+# TODO(d.burmistrov): debug messages about signal hook invocations
 class DaemonizeMiddleware:
 
     def __init__(self, svc, hooks=None):

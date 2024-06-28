@@ -12,12 +12,18 @@ class IntervalScheduler(base.BaseScheduler):
 
     def __init__(self,
                  name: t.Optional[str] = None,
-                 interval: int | float = 1,
+                 interval: int | float | datetime.timedelta = 1,
                  shift: int | float | datetime.timedelta = 0):
-        self._interval = interval
         if isinstance(shift, datetime.timedelta):
             shift = shift.total_seconds()
+
+        if isinstance(interval, datetime.timedelta):
+            self._interval = interval.total_seconds()
+        else:
+            self._interval = interval
+
         self._next_launch = (time.monotonic() + shift) if shift else -c.INF
+
         super().__init__(name=name)
 
     def now(self):

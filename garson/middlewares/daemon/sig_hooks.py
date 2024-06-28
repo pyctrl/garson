@@ -2,8 +2,6 @@ import abc
 import pathlib
 import signal
 
-import daemon  # type: ignore
-
 
 class AbstractSignalHook(abc.ABC):
 
