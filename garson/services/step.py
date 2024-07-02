@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import datetime
 import logging
 import time
 import typing as t
@@ -101,11 +102,13 @@ class StepService(base.AbstractService):
     def __init__(self,
                  step: AbstractStep,
                  *steps: AbstractStep,
-                 responsiveness_period: int | float = 1,
+                 gap: int | float | datetime.timedelta = 1,
                  contexts=None):
         # TODO(d.burmistrov): allow strategy as parameter
         super().__init__(contexts=contexts)
-        self._max_sleep = responsiveness_period
+        if isinstance(gap, datetime.timedelta):
+            gap = gap.total_seconds()
+        self._max_sleep = gap
         self._loop = False
         step.attach_service(self)
         for s in steps:
