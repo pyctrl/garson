@@ -6,10 +6,11 @@ import typing as t
 from garson.schedulers import base
 
 
-class manual(base.BaseProxyScheduler):
+class manual(base.SchedulerInterface):
 
     def __init__(self, *, scheduler: base.SchedulerInterface, **kwargs):
-        super().__init__(scheduler=scheduler, **kwargs)
+        super().__init__(**kwargs)
+        self._sched = scheduler
         self._appointed: t.Optional[base.Appointment] = None
 
     def __repr__(self):
