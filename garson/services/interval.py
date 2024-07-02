@@ -15,41 +15,41 @@ from garson.services import base
 LOG = logging.getLogger(__name__)
 
 
-def _strategy_single(step):
+def _strategy_single(iteration):
     while True:
-        yield step, step.schedule()
+        yield iteration, iteration.schedule()
 
 
-def _strategy_multi_1(*steps):
+def _strategy_multi_1(*iterations):
     base_index = 0
-    steps_count = len(steps)
+    iterations_count = len(iterations)
     while True:
-        step = steps[base_index]
-        result = step.schedule()
-        for j in range(1, steps_count):
-            index = (base_index + j) % steps_count
-            candidate = steps[index]
+        iteration = iterations[base_index]
+        result = iteration.schedule()
+        for j in range(1, iterations_count):
+            index = (base_index + j) % iterations_count
+            candidate = iterations[index]
             appt = candidate.schedule()
             delay = appt.delay
             if delay <= 0:
-                base_index = (index + 1) % steps_count
+                base_index = (index + 1) % iterations_count
                 result = appt
-                step = candidate
+                iteration = candidate
                 break
             if delay < result.delay:
-                base_index = (index + 1) % steps_count
+                base_index = (index + 1) % iterations_count
                 result = appt
-        yield step, result
+        yield iteration, result
 
 
-class AbstractStep(abc.ABC):
+class AbstractIteration(abc.ABC):
 
     def __init__(self,
                  scheduler: sched.SchedulerInterface,
                  name: t.Optional[str] = None):
         self.name = name or type(self).__name__
         self._scheduler = scheduler
-        self.service: t.Optional[StepService] = None
+        self.service: t.Optional[IterationService] = None
         self._iteration = 1
         self.info = i.Info()
         self._reset_info()
@@ -64,19 +64,19 @@ class AbstractStep(abc.ABC):
     def __call__(self):
         self._reset_info()
         self._l(LOG).debug(
-            ">> Starting step '%s' with iteration=%d",
+            ">> Starting '%s' iteration=%d",
             self.name, self._iteration,
         )
         try:
             with utils.measure(self.info):
-                self._step()
+                self._iterate()
             self._l(LOG).debug(
-                "<< Step '%s' with iteration=%d successfully finished",
+                "<< '%s' iteration=%d successfully finished",
                 self.name, self._iteration,
             )
         except Exception as e:
             self._l(LOG).exception(
-                "<< [!!] Step '%s' with iteration=%d has failed: %s",
+                "<< [!!] '%s' iteration=%d has failed: %s",
                 self.name, self._iteration, e,
             )
         finally:
@@ -85,35 +85,40 @@ class AbstractStep(abc.ABC):
     def schedule(self) -> sched.Appointment:
         return self._scheduler.schedule()
 
-    def attach_service(self, service: StepService) -> None:
+    def attach_service(self, service: IterationService) -> None:
         self.service = service
 
     @abc.abstractmethod
-    def _step(self):
+    def _iterate(self):
         raise NotImplementedError
 
 
-class StepService(base.AbstractService):
+class IterationService(base.AbstractService):
 
-    SERVICE_TYPE = "step"
+    SERVICE_TYPE = "iteration"
 
     _STRATEGIES = (_strategy_single, _strategy_multi_1)
 
     def __init__(self,
-                 step: AbstractStep,
-                 *steps: AbstractStep,
+                 iteration: AbstractIteration,
+                 *iterations: AbstractIteration,
                  gap: int | float | datetime.timedelta = 1,
                  contexts=None):
         # TODO(d.burmistrov): allow strategy as parameter
         super().__init__(contexts=contexts)
+        self._loop = False
+
         if isinstance(gap, datetime.timedelta):
             gap = gap.total_seconds()
         self._max_sleep = gap
-        self._loop = False
-        step.attach_service(self)
-        for s in steps:
-            s.attach_service(self)
-        self._steps = self._STRATEGIES[bool(steps)](step, *steps)
+
+        iteration.attach_service(self)
+        for itn in iterations:
+            itn.attach_service(self)
+
+        self._iterations = (
+            self._STRATEGIES[bool(iterations)](iteration, *iterations)
+        )
 
     def _setup(self):
         super()._setup()
@@ -121,9 +126,9 @@ class StepService(base.AbstractService):
 
     def _serve(self):
         while self._loop:
-            step, appt = next(self._steps)
+            iteration, appt = next(self._iterations)
             if appt.is_ready():
-                step()  # step(appt)
+                iteration()  # iteration(appt)
             else:
                 self._l(LOG).debug("Next run delay: %s", appt.delay)
                 tick = min(appt.delay, self._max_sleep)
