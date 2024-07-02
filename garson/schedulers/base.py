@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-import typing as t
 
 
 _F_TIMESTAMP = "timestamp"
@@ -33,7 +32,10 @@ class Appointment:
 
 class SchedulerInterface(abc.ABC):
 
-    def __init__(self, name: str):
+    def __init__(self, *, name: str | None = None):
+        name = name or type(self).__name__
+        if not name.isidentifier():
+            raise ValueError("name must be identifier")
         self.name = name
 
     @abc.abstractmethod
@@ -45,13 +47,27 @@ class SchedulerInterface(abc.ABC):
         raise NotImplementedError
 
 
-class BaseScheduler(SchedulerInterface):
+class BaseProxyScheduler(SchedulerInterface, abc.ABC):
 
-    def __init__(self, name: t.Optional[str] = None):
-        name = name or type(self).__name__
-        super().__init__(name=name)
-        if not name.isidentifier():
-            raise ValueError("name must be identifier")
+    def __init__(self, *, scheduler: SchedulerInterface, **kwargs):
+        scheduler.now()  # sanity check
+        self._sched = scheduler
+        super().__init__(**kwargs)
+
+    def _pre_proxy_hook(self, item):
+        pass
+
+    def _post_proxy_hook(self, item, attr):
+        pass
+
+    def __getattr__(self, item):
+        self._pre_proxy_hook(item)
+        attr = getattr(self._sched, item)
+        self._post_proxy_hook(item, attr)
+        return attr
+
+
+class BaseScheduler(SchedulerInterface):
 
     @abc.abstractmethod
     def _schedule(self, now: float) -> float:

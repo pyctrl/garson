@@ -6,50 +6,52 @@ import typing as t
 from garson.schedulers import base
 
 
-class manual(base.SchedulerInterface):
+class manual(base.BaseProxyScheduler):
 
-    def __init__(self, scheduler: base.SchedulerInterface):
-        self._scheduler = scheduler
-        self._manual_scheduled: t.Optional[base.Appointment] = None
+    def __init__(self, *, scheduler: base.SchedulerInterface, **kwargs):
+        super().__init__(scheduler=scheduler, **kwargs)
+        self._appointed: t.Optional[base.Appointment] = None
+
+    def __repr__(self):
+        return self.__class__.__qualname__
 
     # iface
 
     def now(self) -> float:
-        return self._scheduler.now()
+        return self._sched.now()
 
     def schedule(self) -> base.Appointment:
-        if self._manual_scheduled is None:
-            return self._scheduler.schedule()
-        self._manual_scheduled.refresh()
-        return self._manual_scheduled
+        if self._appointed is None:
+            return self._sched.schedule()
+        self._appointed.refresh()
+        return self._appointed
 
     # manual scheduled
 
-    def _set_next_run_delay(self, delay: int | float | datetime.timedelta,
-                            ) -> base.Appointment:
+    def __set_delay(self, delay: int | float | datetime.timedelta,
+                    ) -> base.Appointment:
         if isinstance(delay, datetime.timedelta):
             delay = delay.total_seconds()
 
-        s = self._scheduler.schedule()
-        self._manual_scheduled = base.Appointment(timestamp=s.timestamp,
-                                                  planned=s.timestamp + delay,
-                                                  scheduler=self)
-        return self._manual_scheduled
+        s = self._sched.schedule()
+        self._appointed = base.Appointment(timestamp=s.timestamp,
+                                           planned=s.timestamp + delay,
+                                           scheduler=self)
+        return self._appointed
 
-    def _set_next_run_timestamp(self, timestamp: int | float | datetime.date,
-                                ) -> base.Appointment:
-        if isinstance(timestamp, (int, float)):
-            return self._set_next_run_delay(timestamp - self._scheduler.now())
+    def __set_ts(self, ts: int | float | datetime.date) -> base.Appointment:
+        if isinstance(ts, (int, float)):
+            return self.__set_delay(ts - self._sched.now())
 
-        if isinstance(timestamp, datetime.datetime):
+        if isinstance(ts, datetime.datetime):
             pass
-        elif isinstance(timestamp, datetime.date):
-            timestamp = datetime.datetime.fromordinal(timestamp.toordinal())
+        elif isinstance(ts, datetime.date):
+            ts = datetime.datetime.fromordinal(ts.toordinal())
 
-        delay = timestamp - datetime.datetime.utcnow()
-        return self._set_next_run_delay(delay)
+        delay = ts - datetime.datetime.utcnow()
+        return self.__set_delay(delay)
 
-    def set_next_run_schedule(  # manual
+    def appoint_next(  # manual
             self,
             *,
             delay: t.Optional[int | float | datetime.timedelta] = None,
@@ -60,11 +62,11 @@ class manual(base.SchedulerInterface):
         elif (delay is not None) and (timestamp is not None):
             raise TypeError("Bad arguments")
         elif delay is not None:
-            return self._set_next_run_delay(delay)
+            return self.__set_delay(delay)
         else:
-            return self._set_next_run_timestamp(timestamp)  # type: ignore[arg-type] # noqa: E501
+            return self.__set_ts(timestamp)  # type: ignore[arg-type] # noqa: E501
 
-    def unset_next_run_schedule(self) -> base.Appointment:
+    def reset_next(self) -> base.Appointment:
         # TODO(d.burmistrov): check if no manual schedule? raise if not?
-        self._manual_scheduled = None
-        return self._scheduler.schedule()
+        self._appointed = None
+        return self._sched.schedule()

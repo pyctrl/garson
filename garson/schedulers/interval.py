@@ -14,6 +14,8 @@ class IntervalScheduler(base.BaseScheduler):
                  name: t.Optional[str] = None,
                  interval: int | float | datetime.timedelta = 1,
                  shift: int | float | datetime.timedelta = 0):
+        self._shift = shift
+
         if isinstance(shift, datetime.timedelta):
             shift = shift.total_seconds()
 
@@ -25,6 +27,10 @@ class IntervalScheduler(base.BaseScheduler):
         self._next_launch = (time.monotonic() + shift) if shift else -c.INF
 
         super().__init__(name=name)
+
+    def __repr__(self):
+        return (f"{self.__class__.__qualname__}({self.name},"
+                f" {self._interval}, {self._shift})")
 
     def now(self):
         return time.monotonic()

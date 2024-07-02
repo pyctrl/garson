@@ -1,6 +1,4 @@
-import multiprocessing
 import os
-import sys
 import time
 
 from garson.services import base
@@ -8,8 +6,19 @@ from garson.middlewares.daemon import mws, sig_hooks
 
 
 class MyService(base.AbstractService):
+
     def __init__(self, *args, **kwargs):
-        super().__init__(contexts=[mws.DaemonizeMiddleware(self, hooks=(sig_hooks.TouchSignalHook("/Users/a.gruk/git/garson/heh"),))])
+        super().__init__(
+            contexts=[
+                mws.DaemonizeMiddleware(
+                    self,
+                    hooks=(
+                        sig_hooks.TouchSignalHook("/Users/a.gruk/git/garson/heh"),
+                    ),
+                ),
+            ],
+        )
+
     def _serve(self):
         while 1:
             print("ahahah")
