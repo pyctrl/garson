@@ -29,16 +29,16 @@ def _strategy_multi_1(*iterations):
         for j in range(1, iterations_count):
             index = (base_index + j) % iterations_count
             candidate = iterations[index]
-            appt = candidate.schedule()
-            delay = appt.delay
+            appointment = candidate.schedule()
+            delay = appointment.delay
             if delay <= 0:
                 base_index = (index + 1) % iterations_count
-                result = appt
+                result = appointment
                 iteration = candidate
                 break
             if delay < result.delay:
                 base_index = (index + 1) % iterations_count
-                result = appt
+                result = appointment
         yield iteration, result
 
 
@@ -128,12 +128,12 @@ class IterationService(base.AbstractService):
 
     def _serve(self):
         while self._loop:
-            iteration, appt = next(self._iqueue)
-            if appt.is_ready():
-                iteration()  # iteration(appt)
+            iteration, appointment = next(self._iqueue)
+            if appointment.is_ready():
+                iteration()  # iteration(appointment)
             else:
-                self._l(LOG).debug("Next run delay: %s", appt.delay)
-                tick = min(appt.delay, self._max_sleep)
+                self._l(LOG).debug("Next run delay: %s", appointment.delay)
+                tick = min(appointment.delay, self._max_sleep)
                 self._l(LOG).debug("Sleeping tick: %s", tick)
                 time.sleep(tick)
 
