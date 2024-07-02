@@ -45,11 +45,12 @@ def _strategy_multi_1(*iterations):
 class AbstractIteration(abc.ABC):
 
     def __init__(self,
+                 service: IterationService,
                  scheduler: sched.SchedulerInterface,
                  name: t.Optional[str] = None):
         self.name = name or type(self).__name__
+        self.service = service
         self._scheduler = scheduler
-        self.service: t.Optional[IterationService] = None
         self._iteration = 1
         self.info = i.Info()
         self._reset_info()
@@ -85,9 +86,6 @@ class AbstractIteration(abc.ABC):
     def schedule(self) -> sched.Appointment:
         return self._scheduler.schedule()
 
-    def attach_service(self, service: IterationService) -> None:
-        self.service = service
-
     @abc.abstractmethod
     def _iterate(self):
         raise NotImplementedError
@@ -100,8 +98,6 @@ class IterationService(base.AbstractService):
     _STRATEGIES = (_strategy_single, _strategy_multi_1)
 
     def __init__(self,
-                 iteration: AbstractIteration,
-                 *iterations: AbstractIteration,
                  gap: int | float | datetime.timedelta = 1,
                  contexts=None):
         # TODO(d.burmistrov): allow strategy as parameter
@@ -112,21 +108,27 @@ class IterationService(base.AbstractService):
             gap = gap.total_seconds()
         self._max_sleep = gap
 
-        iteration.attach_service(self)
-        for itn in iterations:
-            itn.attach_service(self)
+        self._iterations: list[AbstractIteration] = []
+        self._iqueue = None
 
-        self._iterations = (
-            self._STRATEGIES[bool(iterations)](iteration, *iterations)
-        )
+    def add_iteration(self,
+                      scheduler: sched.SchedulerInterface,
+                      iter_cls: t.Type[AbstractIteration],
+                      *args, **kwargs):
+        it = iter_cls(*args, service=self, scheduler=scheduler, **kwargs)  # type: ignore[misc] # noqa: E501
+        self._iterations.append(it)
 
     def _setup(self):
         super()._setup()
+
+        strategy = self._STRATEGIES[bool(len(self._iterations) > 1)]
+        self._iqueue = strategy(*self._iterations)
+
         self._loop = True
 
     def _serve(self):
         while self._loop:
-            iteration, appt = next(self._iterations)
+            iteration, appt = next(self._iqueue)
             if appt.is_ready():
                 iteration()  # iteration(appt)
             else:

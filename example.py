@@ -36,9 +36,10 @@ class SecondIteration(isvc.AbstractIteration):
 
 
 def main():
-    step_1 = FirstIteration(isched.IntervalScheduler(interval=3))
-    step_2 = SecondIteration(isched.IntervalScheduler(interval=1.2))
-    isvc.IterationService(step_1, step_2).serve()
+    svc = isvc.IterationService()
+    svc.add_iteration(isched.IntervalScheduler(interval=3), FirstIteration)
+    svc.add_iteration(isched.IntervalScheduler(interval=1.2), SecondIteration)
+    svc.serve()
 
 
 if __name__ == "__main__":
