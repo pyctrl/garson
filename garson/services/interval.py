@@ -91,7 +91,7 @@ class AbstractIteration(abc.ABC):
         raise NotImplementedError
 
 
-class IterationService(base.AbstractService):
+class IterationService(base.BaseService):
 
     SERVICE_TYPE = "iteration"
 

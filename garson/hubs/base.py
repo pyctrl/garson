@@ -3,7 +3,7 @@ import abc
 from garson.services import base
 
 
-class AbstractHub(base.AbstractService):
+class AbstractHub(base.BaseService):
 
     @abc.abstractmethod
     def add_target(self):

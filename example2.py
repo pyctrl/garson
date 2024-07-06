@@ -5,7 +5,7 @@ from garson.services import base
 from garson.middlewares.daemon import mws, sig_hooks
 
 
-class MyService(base.AbstractService):
+class MyService(base.BaseService):
 
     def __init__(self, *args, **kwargs):
         super().__init__(

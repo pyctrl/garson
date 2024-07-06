@@ -36,6 +36,17 @@ def _mark_failed(method):
 
 class AbstractService(abc.ABC):
 
+    @abc.abstractmethod
+    def stop(self) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def serve(self):
+        raise NotImplementedError()
+
+
+class BaseService(AbstractService, abc.ABC):
+
     SERVICE_TYPE = "untyped"
 
     def __init__(self,
