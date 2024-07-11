@@ -42,13 +42,13 @@ def _strategy_multi_1(*iterations):
         yield iteration, result
 
 
-class AbstractIteration(abc.ABC):
+class AbstractIteration(abc.ABC, utils.PackableMixin):
 
     def __init__(self,
                  service: IterationService,
                  scheduler: sched.SchedulerInterface,
                  name: t.Optional[str] = None):
-        self.name = name or type(self).__name__
+        self.name = name or self.__class__.__name__
         self.service = service
         self._scheduler = scheduler
         self._iteration = 1
@@ -97,48 +97,47 @@ class IterationService(base.BaseService):
 
     _STRATEGIES = (_strategy_single, _strategy_multi_1)
 
-    def __init__(self,
-                 gap: int | float | datetime.timedelta = 1,
-                 contexts=None):
+    def __init__(self, tick: int | float | datetime.timedelta = 1):
         # TODO(d.burmistrov): allow strategy as parameter
-        super().__init__(contexts=contexts)
-        self._loop = False
+        super().__init__()
+        self._should_run = False
 
-        if isinstance(gap, datetime.timedelta):
-            gap = gap.total_seconds()
-        self._max_sleep = gap
+        if isinstance(tick, datetime.timedelta):
+            tick = tick.total_seconds()
+        self._tick = tick
 
-        self._iterations: list[AbstractIteration] = []
+        self._iterations: list = []
         self._iqueue = None
 
-    def add_iteration(self,
-                      scheduler: sched.SchedulerInterface,
-                      iter_cls: t.Type[AbstractIteration],
-                      *args, **kwargs):
-        it = iter_cls(*args, service=self, scheduler=scheduler, **kwargs)  # type: ignore[misc] # noqa: E501
-        self._iterations.append(it)
+    def register_iteration(
+            self,
+            scheduler_pack: utils.Partial[sched.SchedulerInterface],
+            iteration_pack: utils.Partial[AbstractIteration],
+    ):
+        packed = iteration_pack.pack(scheduler=scheduler_pack())
+        self._iterations.append(packed)
 
     def _setup(self):
         super()._setup()
 
         strategy = self._STRATEGIES[bool(len(self._iterations) > 1)]
-        self._iqueue = strategy(*self._iterations)
+        self._iqueue = strategy(*(it(service=self) for it in self._iterations))
 
-        self._loop = True
+        self._should_run = True
 
     def _serve(self):
-        while self._loop:
+        while self._should_run:
             iteration, appointment = next(self._iqueue)
             if appointment.is_ready():
                 iteration()  # iteration(appointment)
             else:
                 self._l(LOG).debug("Next run delay: %s", appointment.delay)
-                tick = min(appointment.delay, self._max_sleep)
+                tick = min(appointment.delay, self._tick)
                 self._l(LOG).debug("Sleeping tick: %s", tick)
                 time.sleep(tick)
 
     def _stop(self):
-        self._loop = False
+        self._should_run = False
 
     def _check_alive(self) -> None:
         return

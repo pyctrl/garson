@@ -49,17 +49,17 @@ class BaseService(AbstractService, abc.ABC):
 
     SERVICE_TYPE = "untyped"
 
-    def __init__(self,
-                 contexts=None,
-                 log_adapter=log.LogAdapter):
-        contexts = contexts or []
-        self._ctxs = g_ctxs.Contexts(contexts)
+    def __init__(self, log_adapter=log.LogAdapter):
+        self._ctxs = g_ctxs.Contexts()
         self._failed = False
         self._serving = False
         self.info = i.Info()
         self._reset_info()
         self._log_adapter = log_adapter
         self._loggers = weakref.WeakKeyDictionary()
+
+    def register_context(self, ctx_pack: utils.Partial):
+        self._ctxs.register_context(ctx_pack.pack(service=self))
 
     def _l(self, logger):
         if logger not in self._loggers:

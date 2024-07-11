@@ -5,10 +5,11 @@ import time
 import typing as t
 
 from garson._lib import constants as c
+from garson._lib import utils
 from garson.schedulers import base
 
 
-class IntervalScheduler(base.BaseScheduler):
+class IntervalScheduler(base.BaseScheduler, utils.PackableMixin):
 
     def __init__(self,
                  name: t.Optional[str] = None,

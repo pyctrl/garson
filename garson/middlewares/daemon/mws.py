@@ -5,14 +5,15 @@ import sys
 import daemon  # type: ignore
 
 from garson._lib import constants as c
+from garson._lib import utils
 from garson.middlewares.daemon import sig_hooks
 
 
 # TODO(d.burmistrov): debug messages about signal hook invocations
-class DaemonizeMiddleware:
+class DaemonizeMiddleware(utils.PackableMixin):
 
-    def __init__(self, svc, hooks=None):
-        self._svc = svc
+    def __init__(self, service, hooks=None):
+        self._svc = service
         self._hooks = {sig: hook
                        for hook in hooks or {}
                        for sig in hook.signals}

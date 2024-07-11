@@ -1,6 +1,8 @@
 import logging
 import random
 
+from garson._lib import utils
+from garson.middlewares.daemon import mws, sig_hooks
 from garson.schedulers import interval as isched
 from garson.services import interval as isvc
 
@@ -37,8 +39,15 @@ class SecondIteration(isvc.AbstractIteration):
 
 def main():
     svc = isvc.IterationService()
-    svc.add_iteration(isched.IntervalScheduler(interval=3), FirstIteration)
-    svc.add_iteration(isched.IntervalScheduler(interval=1.2), SecondIteration)
+    svc.register_context(mws.DaemonizeMiddleware.pack())
+    svc.register_iteration(
+        scheduler_pack=isched.IntervalScheduler.pack(interval=3),
+        iteration_pack=FirstIteration.pack(),
+    )
+    svc.register_iteration(
+        scheduler_pack=isched.IntervalScheduler.pack(interval=1.2),
+        iteration_pack=SecondIteration.pack(),
+    )
     svc.serve()
 
 
