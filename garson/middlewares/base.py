@@ -1,8 +1,16 @@
 import contextlib
 import logging
 
+from garson._lib import utils
 
 LOG = logging.getLogger(__name__)
+
+
+class AbstractBaseMiddleware(
+    contextlib.AbstractContextManager,
+    utils.PackableMixin,
+):
+    pass
 
 
 # TODO(d.burmistrov): make it a context manager?
