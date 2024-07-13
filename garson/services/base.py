@@ -58,7 +58,7 @@ class BaseService(AbstractService, abc.ABC):
         self._log_adapter = log_adapter
         self._loggers = weakref.WeakKeyDictionary()
 
-    def register_context(self, ctx_pack: utils.Partial):
+    def register_context(self, ctx_pack: utils.Packed):
         self._ctxs.register_context(ctx_pack.pack(service=self))
 
     def _l(self, logger):

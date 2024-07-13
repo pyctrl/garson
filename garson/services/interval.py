@@ -111,8 +111,8 @@ class IterationService(base.BaseService):
 
     def register_iteration(
             self,
-            scheduler_pack: utils.Partial[sched.SchedulerInterface],
-            iteration_pack: utils.Partial[AbstractIteration],
+            scheduler_pack: utils.Packed[sched.SchedulerInterface],
+            iteration_pack: utils.Packed[AbstractIteration],
     ):
         packed = iteration_pack.pack(scheduler=scheduler_pack())
         self._iterations.append(packed)

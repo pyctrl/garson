@@ -28,7 +28,7 @@ def measure(info):
             info.exc_type = info.exc_value = None
 
 
-class Partial(t.Generic[T]):
+class Packed(t.Generic[T]):
     def __init__(self, func: t.Type[T], *args, **kwargs):
         self.func = func
         self.args = list(args)
@@ -47,4 +47,4 @@ class PackableMixin:
 
     @classmethod
     def pack(cls, *args, **kwargs):
-        return Partial(cls, *args, **kwargs)
+        return Packed(cls, *args, **kwargs)
