@@ -5,8 +5,8 @@ import sys
 import daemon  # type: ignore
 
 from garson._lib import constants as c
-from garson.middlewares.daemon import sig_hooks
 from garson.middlewares import base
+from garson.middlewares.daemon import sig_hooks
 
 
 # TODO(d.burmistrov): debug messages about signal hook invocations
