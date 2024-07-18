@@ -44,6 +44,12 @@ class Info:
     def __delattr__(self, item: str) -> None:
         raise NotImplementedError
 
+    def __str__(self):
+        return str(self.do_dict())
+
+    def __repr__(self):
+        return repr(self.do_dict())
+
     def do_touch(self, key: str, **kwargs: t.Any) -> Info:
         setattr(self, key, i := Info(**kwargs))
         return i

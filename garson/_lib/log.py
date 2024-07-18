@@ -10,6 +10,10 @@ class Encoder(json.JSONEncoder):
             return obj.do_dict()
         elif isinstance(obj, (datetime.datetime, datetime.timedelta)):
             return str(obj)
+        elif isinstance(obj, type):
+            return repr(obj)
+        elif isinstance(obj, Exception):
+            return repr(obj)
         return super().default(obj)
 
 
@@ -20,5 +24,4 @@ class LogAdapter(logging.LoggerAdapter):
     #     super().__init__(logger, extra or {})
 
     def process(self, msg, kwargs):
-        data = dict(message=msg, **self.extra, **kwargs)
-        return json.dumps(data, cls=Encoder), dict()
+        return json.dumps(dict(message=msg, **self.extra), cls=Encoder), kwargs

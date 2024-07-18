@@ -6,6 +6,7 @@ import logging
 import time
 import typing as t
 
+from garson._lib import constants as c
 from garson._lib import info as i
 from garson._lib import utils
 from garson.schedulers import base as sched
@@ -47,20 +48,24 @@ class AbstractIteration(abc.ABC, utils.PackableMixin):
     def __init__(self,
                  service: IterationService,
                  scheduler: sched.SchedulerInterface,
+                 info: i.Info,
                  name: t.Optional[str] = None):
         self.name = name or self.__class__.__name__
         self.service = service
         self._scheduler = scheduler
         self._iteration = 1
-        self.info = i.Info()
+        self.info = info.do_touch(c.INFO_ITERATION)
+
         self._reset_info()
 
     def _l(self, logger):
-        return logger
+        return self.service._l(logger)
 
     def _reset_info(self):
         self.info.do_clear()
-        self.info.do_update(name=self.name, iteration=self._iteration)
+        self.info.do_update(name=self.name,
+                            qual_name=utils.make_qualname(self),
+                            iteration=self._iteration)
 
     def __call__(self):
         self._reset_info()
@@ -121,7 +126,8 @@ class IterationService(base.BaseService):
         super()._setup()
 
         strategy = self._STRATEGIES[bool(len(self._iterations) > 1)]
-        self._iqueue = strategy(*(it(service=self) for it in self._iterations))
+        self._iqueue = strategy(*(it(service=self, info=self.info)
+                                  for it in self._iterations))
 
         self._should_run = True
 
