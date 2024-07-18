@@ -1,14 +1,6 @@
 # Garson Hackaton
 
 
-## Fixes
-  - Unbind from python-daemon (make it optional)
-
-
-## Features
-* сделать метод у сервиса "хочу реально умереть прям щас" ✅
-
-
 ## Core
 1. Запилить глобальный контекст
 
