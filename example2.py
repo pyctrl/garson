@@ -1,10 +1,8 @@
 import os
 import time
 
-import garson.run_controls.daemon
 from garson.services import base
-from garson.run_controls.daemon import sig_hooks
-from garson.run_controls import daemon
+from garson.rcs import daemon
 
 
 class MyService(base.BaseService):
@@ -15,7 +13,7 @@ class MyService(base.BaseService):
                 daemon.DaemonizeRc(
                     self,
                     hooks=(
-                        garson.run_controls.daemon.TouchSignalHook("/Users/a.gruk/git/garson/heh"),
+                        daemon.TouchSignalHook("/Users/a.gruk/git/garson/heh"),
                     ),
                 ),
             ],

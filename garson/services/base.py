@@ -13,7 +13,7 @@ from garson._lib import constants as c
 from garson._lib import info as i
 from garson._lib import log
 from garson._lib import utils
-from garson.run_controls import base as g_ctxs
+from garson.rcs import base as rcs
 
 
 LOG = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class BaseService(AbstractService, abc.ABC):
     SERVICE_TYPE = "untyped"
 
     def __init__(self, log_adapter=log.LogAdapter):
-        self._ctxs = g_ctxs.ServiceRunControls()
+        self._rcs = rcs.ServiceRunControls()
         self._failed = False
         self._serving = False
         self.info = i.Info()
@@ -58,8 +58,8 @@ class BaseService(AbstractService, abc.ABC):
         self._log_adapter = log_adapter
         self._loggers = weakref.WeakKeyDictionary()
 
-    def register_context(self, ctx_pack: utils.Packed):
-        self._ctxs.register_context(ctx_pack.pack(service=self))
+    def register_rc(self, packed_rc: utils.Packed):
+        self._rcs.register_rc(packed_rc.pack(service=self))
 
     def _l(self, logger):
         if logger not in self._loggers:
@@ -77,10 +77,10 @@ class BaseService(AbstractService, abc.ABC):
                            instance_id=uuid.uuid4().hex)
 
     def _setup(self):
-        self._ctxs.open()
+        self._rcs.open()
 
     def _teardown(self):
-        self._ctxs.close()
+        self._rcs.close()
 
     def __enter__(self):
         self._l(LOG).info("Preparing to serve...")

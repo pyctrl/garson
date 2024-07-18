@@ -7,7 +7,7 @@ import sys
 from daemon import daemon  # type: ignore
 
 from garson._lib import constants as c
-from garson.run_controls import base
+from garson.rcs import base
 
 
 class AbstractSignalHook(abc.ABC):

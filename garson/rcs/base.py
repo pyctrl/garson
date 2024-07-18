@@ -16,24 +16,24 @@ class AbstractServiceRunControl(
 # TODO(d.burmistrov): make it a context manager?
 class ServiceRunControls:
 
-    def __init__(self, contexts=None):
-        self._contexts = contexts or []
+    def __init__(self, rcs=None):
+        self._rcs = rcs or []
         self._stack = None
 
-    def register_context(self, packed_context):
-        self._contexts.append(packed_context)
+    def register_rc(self, packed_rc):
+        self._rcs.append(packed_rc)
 
     def open(self):
         self._stack = contextlib.ExitStack()
-        LOG.info("Entering contexts...")
-        ctx_count = len(self._contexts)
-        for i, ctx in enumerate(self._contexts, start=1):
-            LOG.info("Entering context %s/%s...", i, ctx_count)
+        LOG.info("Entering run controls...")
+        ctx_count = len(self._rcs)
+        for i, ctx in enumerate(self._rcs, start=1):
+            LOG.info("Entering run control %s/%s...", i, ctx_count)
             self._stack.enter_context(ctx())
-        LOG.debug("Entered all contexts.")
+        LOG.debug("Entered all run controls.")
 
     def close(self):
-        LOG.info("Leaving contexts...")
+        LOG.info("Leaving run run controls...")
         self._stack.close()
         self._stack = None
-        LOG.debug("Left all contexts.")
+        LOG.debug("Left all run controls.")

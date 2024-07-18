@@ -1,7 +1,7 @@
 import logging
 import random
 
-from garson.run_controls import daemon
+from garson.rcs import daemon
 from garson.schedulers import interval as isched
 from garson.services import interval as isvc
 
@@ -38,7 +38,7 @@ class SecondIteration(isvc.AbstractIteration):
 
 def main():
     svc = isvc.IterationService()
-    svc.register_context(daemon.DaemonizeRc.pack())
+    svc.register_rc(daemon.DaemonizeRc.pack())
     svc.register_iteration(
         scheduler_pack=isched.IntervalScheduler.pack(interval=3),
         iteration_pack=FirstIteration.pack(),
