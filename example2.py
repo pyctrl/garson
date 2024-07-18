@@ -1,8 +1,10 @@
 import os
 import time
 
+import garson.run_controls.daemon
 from garson.services import base
-from garson.middlewares.daemon import mws, sig_hooks
+from garson.run_controls.daemon import sig_hooks
+from garson.run_controls import daemon
 
 
 class MyService(base.BaseService):
@@ -10,10 +12,10 @@ class MyService(base.BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(
             contexts=[
-                mws.DaemonizeMiddleware(
+                daemon.DaemonizeRc(
                     self,
                     hooks=(
-                        sig_hooks.TouchSignalHook("/Users/a.gruk/git/garson/heh"),
+                        garson.run_controls.daemon.TouchSignalHook("/Users/a.gruk/git/garson/heh"),
                     ),
                 ),
             ],

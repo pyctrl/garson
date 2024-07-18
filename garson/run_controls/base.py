@@ -6,7 +6,7 @@ from garson._lib import utils
 LOG = logging.getLogger(__name__)
 
 
-class AbstractBaseMiddleware(
+class AbstractServiceRunControl(
     contextlib.AbstractContextManager,
     utils.PackableMixin,
 ):
@@ -14,7 +14,7 @@ class AbstractBaseMiddleware(
 
 
 # TODO(d.burmistrov): make it a context manager?
-class Contexts:
+class ServiceRunControls:
 
     def __init__(self, contexts=None):
         self._contexts = contexts or []

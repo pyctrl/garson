@@ -13,7 +13,7 @@ from garson._lib import constants as c
 from garson._lib import info as i
 from garson._lib import log
 from garson._lib import utils
-from garson.middlewares import base as g_ctxs
+from garson.run_controls import base as g_ctxs
 
 
 LOG = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class BaseService(AbstractService, abc.ABC):
     SERVICE_TYPE = "untyped"
 
     def __init__(self, log_adapter=log.LogAdapter):
-        self._ctxs = g_ctxs.Contexts()
+        self._ctxs = g_ctxs.ServiceRunControls()
         self._failed = False
         self._serving = False
         self.info = i.Info()
