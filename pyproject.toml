@@ -28,6 +28,6 @@ keywords = ["garson", "service"]
 
 
 [project.optional-dependencies]
-mw-daemon = ["python-daemon<4.0.0"]
+rc-daemon = ["python-daemon<4.0.0"]
 svc-bjoern = ["bjoern<4.0.0"]
-all = ["garson[mw-daemon, svc-bjoern]"]
+all = ["garson[rc-daemon, svc-bjoern]"]
