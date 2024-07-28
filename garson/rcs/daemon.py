@@ -3,6 +3,7 @@ import os
 import pathlib
 import signal
 import sys
+import typing as t
 
 from daemon import daemon  # type: ignore
 
@@ -12,7 +13,7 @@ from garson.rcs import base
 
 class AbstractSignalHook(abc.ABC):
 
-    def __init__(self, signals):
+    def __init__(self, signals: t.Iterable[int]):
         self._signals = tuple(signals)
 
     @property
@@ -43,8 +44,8 @@ class StopSignalHook(AbstractSignalHook):
 
 class TouchSignalHook(AbstractSignalHook):
 
-    def __init__(self, path: str, sig=signal.SIGHUP):
-        super().__init__((sig,))
+    def __init__(self, path: str, signals=(signal.SIGUSR1,)):
+        super().__init__(signals)
         self.path = pathlib.Path(path)
 
     def _call(self, sig, frame):
