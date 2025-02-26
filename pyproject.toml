@@ -31,3 +31,5 @@ all = ["garson[rc-daemon, svc-bjoern]"]
 [build-system]
 requires = ["setuptools>=61.2", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
