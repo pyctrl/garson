@@ -1,10 +1,6 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "garson"
-version = "0.1.0"
+dynamic = ["version"]
 authors = [
   { name="Dima Burmistrov", email="pyctrl.dev@gmail.com" },
 ]
@@ -12,7 +8,7 @@ description = "The library that serves"
 readme = "README.rst"
 license = {file = "LICENSE"}
 
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -26,8 +22,12 @@ keywords = ["garson", "service"]
 "Homepage" = "https://gitlab.com/pyctrl/garson"
 "Bug Tracker" = "https://gitlab.com/pyctrl/garson/-/issues"
 
-
 [project.optional-dependencies]
 rc-daemon = ["python-daemon<4.0.0"]
 svc-bjoern = ["bjoern<4.0.0"]
 all = ["garson[rc-daemon, svc-bjoern]"]
+
+
+[build-system]
+requires = ["setuptools>=61.2", "setuptools-scm", "wheel"]
+build-backend = "setuptools.build_meta"
