@@ -19,8 +19,11 @@ classifiers = [
 keywords = ["garson", "service"]
 
 [project.urls]
-"Homepage" = "https://gitlab.com/pyctrl/garson"
-"Bug Tracker" = "https://gitlab.com/pyctrl/garson/-/issues"
+homepage = "https://github.com/pyctrl/garson"
+# source = "https://github.com/pyctrl/garson"
+# documentation = ...
+issues = "https://github.com/pyctrl/garson/issues"
+
 
 [project.optional-dependencies]
 rc-daemon = ["python-daemon<4.0.0"]
